@@ -6,7 +6,6 @@ import (
 	"time"
 	//MySQL driver
 	_ "github.com/go-sql-driver/mysql"
-	//convert to strings
 	// import of application related stuff
 	"git.monkey-works.de/scripting/api"
 	"monkey-works.de/model"
@@ -18,6 +17,8 @@ const URL string = "tcp(127.0.0.1:3306)/schema" //tcp(yourHost_IP:Port)/Schema_n
 const USERNAME string = "user"
 const PASSWORD string = "1234"
 const QUERY string = "SELECT * FROM variables WHERE id = ?" //your SQL Statement, "?" is a placeholder
+
+//Update interval in milliseconds
 const UPDATE_INTERVAL time.Duration = 2000
 
 var db *sql.DB //you database
@@ -39,7 +40,7 @@ var Stop bool
 |  1   | DateItem1  |  HelloWorld |
 |______|____________|_____________|
 */
-// this struct is what we need/get from our SQL Statement
+// the result from our Query will be an id,name and value
 type SQLData struct {
 	id    int
 	name  string
@@ -47,6 +48,8 @@ type SQLData struct {
 }
 
 // @script
+//Functions as the main method
+//model.Application allows us to access data from the Workbench and change it
 func InitializeScripting(application model.Application) {
 	fmt.Println("Hello Scripting")
 	// get status item
@@ -56,10 +59,11 @@ func InitializeScripting(application model.Application) {
 	}
 	app = application
 	// create start and stop button
-	registerButton()
-	registerStopButton()
+	getStartButton()
+	getStopButton()
 }
 
+//Check if there is a connection to the database
 func CheckConnectionToDataBase() bool {
 	//ping the database to check if there is a connection
 	err := db.Ping()
@@ -71,6 +75,8 @@ func CheckConnectionToDataBase() bool {
 	return true
 }
 
+//Connect to the database, check if there is a connection to the database
+//Send SQL query to the database and receive data from the server
 func GetData() {
 	//infinite loop that reads the same data every single time (updates every UPDATE_INTERVAL milliseconds)
 	for range time.Tick(time.Millisecond * UPDATE_INTERVAL) {
@@ -93,12 +99,13 @@ func GetData() {
 		if Stop == true {
 			return
 		}
-		//Execute MySQL Query, in our example we'll keep track of two DataItems
-		executeQuery(1)
+		//Execute MySQL Query
+		sendSQLQueryToDataBaseAndReceiveData(1)
 	}
 }
 
-func executeQuery(i int) {
+//Send SQL query to the Server and receive data
+func sendSQLQueryToDataBaseAndReceiveData(i int) {
 	//struct to get data from SQL QUERY
 	var sqlData SQLData
 	//SQL Statement that gets executed
@@ -119,6 +126,8 @@ func executeQuery(i int) {
 	}
 }
 
+//Show result of the query
+//Prints Data into
 func PrintData(id int, name string, value string) {
 	//Print data into the DataItems
 	// get DataItems
@@ -131,6 +140,9 @@ func PrintData(id int, name string, value string) {
 	status.SetCurrentValue("Retrieved data successfully")
 }
 
+//endless loop
+//start getting data the database
+//stop the application when "Stop" is true
 func StartSimulation() {
 	//Start to get Data
 	Stop = false
@@ -148,7 +160,8 @@ func StartSimulation() {
 	}
 }
 
-func registerButton() {
+//Action Listener that starts the application when it gets triggered
+func getStartButton() {
 	// get button reference
 	btn := app.ClientDataModel().FindDataItemByName("refreshTriggered").(model.BooleanDataItem)
 	btn.SetCurrentValue(false)
@@ -165,7 +178,8 @@ func registerButton() {
 	})
 }
 
-func registerStopButton() {
+//Action Listener that stops the application when it gets triggered
+func getStopButton() {
 	// get button reference
 	btn := app.ClientDataModel().FindDataItemByName("stopTriggered").(model.BooleanDataItem)
 	btn.SetCurrentValue(false)

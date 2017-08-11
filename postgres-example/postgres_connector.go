@@ -1,12 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
-	"database/sql"
+
 	_ "github.com/lib/pq"
 )
-
 
 //The endpoint of our web service we want to connect to
 //Change this to your endpoint
@@ -27,8 +27,8 @@ var Data = make(chan *Response)
 // Global channel to control periodic task
 var Stop = make(chan bool)
 
-
 var db *sql.DB
+
 // Data structure of simple data item provided by REST interface
 // Adapt this to your data structure
 type DataItem struct {
@@ -72,14 +72,12 @@ func processData(data *Response) {
 	}
 }
 
-
-
 // starts every UPDATE_INTERVAL milliseconds a  Request to get data from the data base
 // the response is forwarded to the global channel if available
 func getData() {
 	var err error
 	db, err = sql.Open("postgres", "host="+URL+":"+PORT+"user="+USERNAME+" dbname="+DATABASE+" password="+PASSWORD+" sslmode=disable")
-	if(err!=nil) {
+	if err != nil {
 		fmt.Println("Connection error")
 		Stop <- true
 		return
@@ -87,20 +85,20 @@ func getData() {
 	var resp Response
 	for range time.Tick(time.Millisecond * UPDATE_INTERVAL) {
 		rows, err := db.Query(QUERY)
-		if(err != nil) {
+		if err != nil {
 			//some error happened
+			fmt.Println("Connection error")
 			Data <- nil
 			continue
 		}
 
-
 		for rows.Next {
 			var dataItem DataItem
-			rows.Scan(&dataItem.Name,&dataItem.Value,&dataItem.Timestamp) 
+			rows.Scan(&dataItem.Name, &dataItem.Value, &dataItem.Timestamp)
 			//	Data <- nil
 			//	continue
 			//}
-			resp.DataItems = append(resp.DataItems,dataItem)
+			resp.DataItems = append(resp.DataItems, dataItem)
 
 		}
 		Data <- &resp
