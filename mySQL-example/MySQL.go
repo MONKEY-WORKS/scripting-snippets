@@ -80,7 +80,10 @@ func CheckConnectionToDataBase() bool {
 // It sends SQL query to the database and receives data from the server.
 func GetData() {
 	//infinite loop that reads the same data every single time (updates every UPDATE_INTERVAL milliseconds)
-	for range time.Tick(time.Millisecond * UPDATE_INTERVAL) {
+	// new ticker that ticks every UPDATE_INTERVAL milliseconds
+	ticker := time.NewTicker(time.Millisecond * UPDATE_INTERVAL)
+	defer ticker.Stop()
+	for range ticker.C {
 		// error for error handling
 		var err error
 		// Database connection

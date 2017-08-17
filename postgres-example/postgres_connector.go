@@ -99,7 +99,10 @@ func getData() {
 		return
 	}
 	var resp Response
-	for range time.Tick(time.Millisecond * UPDATE_INTERVAL) {
+	// new ticker that ticks every UPDATE_INTERVAL milliseconds
+	ticker := time.NewTicker(time.Millisecond * UPDATE_INTERVAL)
+	defer ticker.Stop()
+	for range ticker.C {
 		resp.DataItems = nil
 		rows, err := db.Query(QUERY)
 		if err != nil {
